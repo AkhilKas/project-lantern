@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Test + lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# DVC: track .dvc files, ignore the cache
+/.dvc/cache
+/.dvc/tmp
+
+# Data (DVC-tracked, not git-tracked)
+data/raw/*
+data/interim/*
+data/parsed/*
+data/ground_truth/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/parsed/.gitkeep
+!data/ground_truth/.gitkeep
+
+# Secrets
+.env
+*.key

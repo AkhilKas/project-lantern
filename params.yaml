@@ -1,0 +1,52 @@
+# Project LANTERN - pipeline parameters
+# DVC stages and code read this file. Change values here, not in code.
+
+edgar:
+  # SEC EDGAR's fair-access policy requires a User-Agent that identifies you.
+  # See: https://www.sec.gov/os/accessing-edgar-data
+  user_agent_name: "Akhilesh Kasturi"
+  user_agent_email: "kasturi.a@northeastern.edu"
+
+  # 5 Fortune-500 companies across different sectors.
+  # Tickers are easier than CIKs and sec-edgar-downloader resolves them.
+  companies:
+    - ticker: AAPL
+      name: Apple
+    - ticker: MSFT
+      name: Microsoft
+    - ticker: JPM
+      name: JPMorgan Chase
+    - ticker: XOM
+      name: ExxonMobil
+    - ticker: WMT
+      name: Walmart
+
+  # Pull the most recent 10-K and 10-Q for each. Keep numbers small so the
+  # raw data stays under the 100 MB checkpoint in the brief.
+  filings:
+    - form: 10-K
+      limit: 1
+    - form: 10-Q
+      limit: 1
+
+  # Whether to download the accompanying XBRL attachments.
+  include_xbrl: true
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  parsed: data/parsed
+  ground_truth: data/ground_truth
+
+text_extraction:
+  # If pdfplumber returns fewer than this many non-whitespace characters
+  # for a page, treat it as scanned and route to OCR.
+  ocr_char_threshold: 50
+  ocr_dpi: 300
+  ocr_lang: eng
+
+tables:
+  camelot_flavors: [lattice, stream]
+  # Heuristic: if a page has detectable ruling lines, prefer lattice;
+  # otherwise stream. Numbers tunable in Sprint 1.
+  ruling_line_min_count: 4
