@@ -14,6 +14,7 @@ from rich.logging import RichHandler
 
 from lantern.config import load_config
 from lantern.ingest.edgar import download_filings, summarize
+from lantern.parse.text import extract, find_primary_documents, write_interim
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -50,6 +51,35 @@ def info_cmd(ctx: click.Context) -> None:
     """Print the active configuration (debug aid)."""
     cfg = ctx.obj["cfg"]
     click.echo(cfg.model_dump_json(indent=2))
+
+
+@main.command("parse")
+@click.option("--ticker", default=None, help="Only parse filings for this ticker.")
+@click.option("--form", default=None, help="Only parse this form type (10-K or 10-Q).")
+@click.pass_context
+def parse_cmd(ctx: click.Context, ticker: str | None, form: str | None) -> None:
+    """Extract text from downloaded filings into data/interim."""
+    cfg = ctx.obj["cfg"]
+    docs = find_primary_documents(cfg.paths.raw)
+    if ticker:
+        docs = [(t, f, a, p) for t, f, a, p in docs if t.upper() == ticker.upper()]
+    if form:
+        docs = [(t, f, a, p) for t, f, a, p in docs if f.upper() == form.upper()]
+
+    if not docs:
+        click.echo("No primary documents found. Run `lantern download` first.")
+        return
+
+    written: list[str] = []
+    for t, f, accession, path in docs:
+        filing = extract(path, cfg.text_extraction)
+        out = write_interim(filing, cfg.paths.interim, t, f, accession)
+        char_total = sum(p.char_count for p in filing.pages)
+        written.append(f"  {t:6s} {f:5s}  chars={char_total:>8,}  -> {out}")
+
+    click.echo("Parsed filings:")
+    click.echo("\n".join(written))
+    click.echo(f"Total: {len(written)} filing(s)")
 
 
 if __name__ == "__main__":
