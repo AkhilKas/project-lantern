@@ -14,6 +14,7 @@ from rich.logging import RichHandler
 
 from lantern.config import load_config
 from lantern.ingest.edgar import download_filings, summarize
+from lantern.parse.tables import extract_tables, write_tables_jsonl
 from lantern.parse.text import extract, find_primary_documents, write_interim
 
 
@@ -78,6 +79,34 @@ def parse_cmd(ctx: click.Context, ticker: str | None, form: str | None) -> None:
         written.append(f"  {t:6s} {f:5s}  chars={char_total:>8,}  -> {out}")
 
     click.echo("Parsed filings:")
+    click.echo("\n".join(written))
+    click.echo(f"Total: {len(written)} filing(s)")
+
+
+@main.command("extract-tables")
+@click.option("--ticker", default=None, help="Only process filings for this ticker.")
+@click.option("--form", default=None, help="Only process this form type (10-K or 10-Q).")
+@click.pass_context
+def extract_tables_cmd(ctx: click.Context, ticker: str | None, form: str | None) -> None:
+    """Extract tables from downloaded filings into data/interim as JSONL."""
+    cfg = ctx.obj["cfg"]
+    docs = find_primary_documents(cfg.paths.raw)
+    if ticker:
+        docs = [(t, f, a, p) for t, f, a, p in docs if t.upper() == ticker.upper()]
+    if form:
+        docs = [(t, f, a, p) for t, f, a, p in docs if f.upper() == form.upper()]
+
+    if not docs:
+        click.echo("No primary documents found. Run `lantern download` first.")
+        return
+
+    written: list[str] = []
+    for t, f, accession, path in docs:
+        filing = extract_tables(path, cfg.tables)
+        out = write_tables_jsonl(filing, cfg.paths.interim, t, f, accession)
+        written.append(f"  {t:6s} {f:5s}  tables={len(filing.tables):>3}  -> {out}")
+
+    click.echo("Extracted tables:")
     click.echo("\n".join(written))
     click.echo(f"Total: {len(written)} filing(s)")
 
