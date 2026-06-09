@@ -45,3 +45,6 @@ data/ground_truth/*
 # Secrets
 .env
 *.key
+
+# Local dev log (not for the repo)
+DEVLOG.md
