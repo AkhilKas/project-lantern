@@ -8,15 +8,16 @@ in a separate Part 2 repo.
 
 ## Status
 
-Sprint 1 in progress. Current scope: E1 Bootstrap (this commit).
+Sprint 1 in progress. Parsing pipeline (E2–E5) complete; sprint moves next to
+representation and orchestration (E6, E9).
 
 | Epic | Description | Status |
 |------|-------------|--------|
-| E1   | Bootstrap, EDGAR + XBRL fetch | in progress |
-| E2   | Text extraction (pdfplumber + OCR fallback) | pending |
-| E3   | Table extraction (Camelot lattice + stream) | pending |
-| E4   | Layout detection (LayoutParser) | pending |
-| E5   | Docling pipeline | pending |
+| E1   | Bootstrap, EDGAR + XBRL fetch | complete |
+| E2   | Text extraction (pdfplumber + OCR fallback) | complete |
+| E3   | Table extraction (Camelot lattice + stream) | complete |
+| E4   | Layout detection (LayoutParser) | complete |
+| E5   | Docling pipeline | complete |
 | E6   | Metadata and provenance schema | pending |
 | E7   | Storage format comparison (MD/JSON/TXT) | pending |
 | E8   | Build vs buy: Gemini comparison | pending |
@@ -43,6 +44,12 @@ lantern download
 
 # Inspect the resolved config
 lantern info
+
+# Parsing pipeline (each stage writes to data/interim/<TICKER>/<FORM>/)
+lantern parse            # E2: text  -> <accession>.txt
+lantern extract-tables   # E3: tables -> <accession>_tables.jsonl
+lantern detect-layout    # E4: layout regions -> <accession>_layout.jsonl
+lantern docling          # E5: unified pipeline -> <accession>_docling.{jsonl,md}
 ```
 
 Optional extras (installed only when you reach the relevant epic):

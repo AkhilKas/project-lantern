@@ -14,6 +14,7 @@ from rich.logging import RichHandler
 
 from lantern.config import load_config
 from lantern.ingest.edgar import download_filings, summarize
+from lantern.parse.docling import extract_docling, write_docling_jsonl, write_docling_markdown
 from lantern.parse.layout import extract_layout, write_layout_jsonl
 from lantern.parse.tables import extract_tables, write_tables_jsonl
 from lantern.parse.text import extract, find_primary_documents, write_interim
@@ -140,6 +141,42 @@ def detect_layout_cmd(ctx: click.Context, ticker: str | None, form: str | None) 
         written.append(f"  {t:6s} {f:5s}  {summary}  -> {out.name}")
 
     click.echo("Layout detection results:")
+    click.echo("\n".join(written))
+    click.echo(f"Total: {len(written)} filing(s)")
+
+
+@main.command("docling")
+@click.option("--ticker", default=None, help="Only process filings for this ticker.")
+@click.option("--form", default=None, help="Only process this form type (10-K or 10-Q).")
+@click.pass_context
+def docling_cmd(ctx: click.Context, ticker: str | None, form: str | None) -> None:
+    """Run the Docling unified pipeline on downloaded filings.
+
+    Emits per-filing JSONL (block-level) and Markdown to data/interim.
+    """
+    cfg = ctx.obj["cfg"]
+    docs = find_primary_documents(cfg.paths.raw)
+    if ticker:
+        docs = [(t, f, a, p) for t, f, a, p in docs if t.upper() == ticker.upper()]
+    if form:
+        docs = [(t, f, a, p) for t, f, a, p in docs if f.upper() == form.upper()]
+
+    if not docs:
+        click.echo("No primary documents found. Run `lantern download` first.")
+        return
+
+    written: list[str] = []
+    for t, f, accession, path in docs:
+        document = extract_docling(path)
+        jsonl_out = write_docling_jsonl(document, cfg.paths.interim, t, f, accession)
+        md_out = write_docling_markdown(document, cfg.paths.interim, t, f, accession)
+        counts: dict[str, int] = {}
+        for b in document.blocks:
+            counts[b.block_type] = counts.get(b.block_type, 0) + 1
+        summary = " ".join(f"{k}={v}" for k, v in sorted(counts.items())) or "empty"
+        written.append(f"  {t:6s} {f:5s}  {summary}  -> {jsonl_out.name}, {md_out.name}")
+
+    click.echo("Docling pipeline results:")
     click.echo("\n".join(written))
     click.echo(f"Total: {len(written)} filing(s)")
 
