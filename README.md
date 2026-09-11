@@ -52,6 +52,18 @@ lantern detect-layout    # E4: layout regions -> <accession>_layout.jsonl
 lantern docling          # E5: unified pipeline -> <accession>_docling.{jsonl,md}
 ```
 
+All four parse commands take `--ticker` / `--form` filters and `--jobs/-j` for
+process-level parallelism across filings:
+
+```bash
+lantern docling -j 0            # one worker per CPU core
+lantern docling -j 4            # four workers
+lantern docling --ticker AAPL   # single filing, serial by default
+```
+
+`-j 1` (the default) runs in-process and is the reproducible benchmark
+baseline. Output is byte-identical at any worker count.
+
 Optional extras (installed only when you reach the relevant epic):
 
 ```bash
